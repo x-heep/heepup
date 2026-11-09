@@ -1,6 +1,6 @@
 # Exercise: build config B on top of config A.
 # Target: cv32e40p, N-to-M bus, 2 contiguous 32 KiB banks + 4 interleaved 16 KiB banks.
-# Look at ../configs/A.py for the API. Solution: ../configs/B.py
+# Look at ../configs/A.py for the API. Solution: ../solutions/part1/B.py
 from pathlib import Path
 
 from load_config import load_cfg_file

@@ -1,0 +1,31 @@
+CAPI=2:
+
+# Copyright 2026 Politecnico di Torino.
+# Solderpad Hardware License, Version 2.1, see LICENSE.md for details.
+# SPDX-License-Identifier: Apache-2.0 WITH SHL-2.1
+
+name: "x-heep:ip:matmul_acc"
+description: "int8 matrix multiplication accelerator for X-HEEP"
+
+filesets:
+  files_rtl:
+    depend:
+    - x-heep::packages
+    - lowrisc:prim:all
+    - pulp-platform.org::register_interface
+    files:
+    - rtl/matmul_acc_reg_pkg.sv
+    - rtl/matmul_acc_reg_top.sv
+    - rtl/matmul_acc.sv
+    file_type: systemVerilogSource
+
+  files_verilator_waiver:
+    files:
+    - matmul_acc.vlt
+    file_type: vlt
+
+targets:
+  default:
+    filesets:
+    - files_rtl
+    - tool_verilator? (files_verilator_waiver)

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Build the PYNQ-Z2 bitstreams of the given configs (default: A B C keccak), in parallel,
+# Build the PYNQ-Z2 bitstreams of the given configs (default: A B C matmul), in parallel,
 # in two debug variants: bscane (on-board USB JTAG) and epflp (EPFL programmer).
-# A, B, C are X-HEEP configs in configs/; keccak is GR-HEEP with the Part 2 solution.
+# A, B, C are X-HEEP configs in configs/; matmul is GR-HEEP with the Part 2 solution.
 # Needs Vivado and the x-heep environment (conda env, RISC-V toolchain, verible) loaded.
 # Usage: scripts/build-bitstreams.sh [CONFIG...]
 set -euo pipefail
@@ -16,7 +16,7 @@ build() {
     [ "$variant" = bscane ] && flags="--flag=use_bscane_xilinx"
 
     rm -rf "$dir"
-    if [ "$cfg" = keccak ]; then
+    if [ "$cfg" = matmul ]; then
         rsync -a --exclude build --exclude .git "$ROOT/gr-heep/" "$dir/"
         cp "$ROOT/solutions/part2/mcu-gen-config.py" "$dir/config/"
         cp "$ROOT/solutions/part2/gr_heep_peripherals.sv.tpl" "$dir/hw/gr-heep/"
@@ -32,7 +32,7 @@ build() {
 }
 
 configs=("$@")
-[ $# -eq 0 ] && configs=(A B C keccak)
+[ $# -eq 0 ] && configs=(A B C matmul)
 
 pids=()
 for cfg in "${configs[@]}"; do

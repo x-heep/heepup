@@ -1,54 +1,70 @@
 # Part 2: integrate an accelerator with GR-HEEP
 
 GR-HEEP extends X-HEEP without touching it: your hardware lives next to X-HEEP and connects to its
-external ports. Here you integrate a SHA-3 (Keccak) accelerator in two ways and compare them with software:
+external ports. Here you integrate `matmul_acc`, a matrix multiplication accelerator:
 
-| Variant | How it connects | Application |
-|---------|-----------------|-------------|
-| software | none, Keccak runs on the CPU | `SHA3-384-baseline` |
-| loosely coupled | memory-mapped peripheral + interrupt | `SHA3-384-loosely` |
-| tightly coupled | coprocessor on the CPU's CORE-V-XIF | `SHA3-384-tightly` |
+- the CPU writes the addresses of A, B, C, the size N and the element type in its **registers** and starts it;
+- the accelerator reads A and B and writes C through its **OBI master port**, one word per cycle;
+- each word holds 4 int8, 2 int16 or 1 int32 elements (**packed SIMD**, register `MODE`);
+- at the end it raises an **interrupt**.
 
-The accelerators are already vendored in `hw/vendor/keccak` and `hw/vendor/keccak_tightly`,
-the applications in `sw/applications`. All commands run from `gr-heep/`, with `conda activate x-heep`.
+The accelerator is already vendored in `hw/vendor/matmul_acc` (see its `README.md`). Two applications:
+
+| Application | What it does |
+|-------------|--------------|
+| `matmul_sw` | C = A x B (32x32) on the CPU with int8, int16 and int32 elements, prints the cycles |
+| `matmul_hw` | the same on the accelerator, prints the cycles and checks the results |
+
+All commands run from `gr-heep/`, with `conda activate x-heep`.
 
 ## Hands-on 3: integration and simulation (15-20')
 
-### 1. Configuration: `config/mcu-gen-config.py`
+### 0. Baseline
 
-- Enable the XIF: uncomment `system.set_xif(...)` and set `x_num_rs=3` (the Keccak coprocessor reads 3 registers).
-- In `ext_periph`, add the loosely coupled peripheral:
+Before touching anything, measure the software version on the model you built at home in Part 0:
+
+```bash
+make app PROJECT=matmul_sw
+make verilator-run
+```
+
+### 1. Configuration: `config/mcu-gen-config.py`, function `gr_heep_config()`
+
+- `ext_xbar_nmasters = 1`: one external master port, for the accelerator.
+- In `ext_periph`, add the accelerator registers:
 
   ```python
-  "keccak": {
+  "matmul": {
       "offset": 0x00000000,
       "length": 0x00001000,
   },
   ```
 
-- Set `external_interrupts = 1`: the peripheral raises an interrupt when it is done.
+- `external_interrupts = 1`: one interrupt line, for the accelerator.
 
 ### 2. Hardware: `hw/gr-heep/gr_heep_peripherals.sv.tpl`
 
-This template already contains a commented example for each kind of accelerator. Replace them:
+In the loop over `gr_heep["peripherals"]` there is a commented example (`TestIp`). Next to it, instantiate
+`matmul_acc` when `a_slave['name'] == "Matmul"`:
 
-- in the loop over `gr_heep["peripherals"]`, instantiate `keccak_top` when `a_slave['name'] == "Keccak"`.
-  Ports: `clk_i`, `rst_ni`, `reg_req_i`/`reg_rsp_o` (use index `gr_heep_pkg::KeccakPeriphIdx`
-  of `gr_heep_peripheral_req`/`gr_heep_peripheral_rsp`), `keccak_intr_o` to `gr_heep_peripheral_vec_int[0]`;
-- in the `cv32e40px and xif` block, instantiate `keccak_tightly_wrapper`.
-  Ports: `clk_i`, `rst_ni` and the six `xif_*_if` interfaces.
+| Port | Connect to |
+|------|------------|
+| `clk_i`, `rst_ni` | `clk_i`, `rst_ni` |
+| `reg_req_i`, `reg_rsp_o` | `gr_heep_peripheral_req` / `gr_heep_peripheral_rsp` at index `gr_heep_pkg::MatmulPeriphIdx` |
+| `obi_req_o`, `obi_rsp_i` | `gr_heep_master_req_o[0]` / `gr_heep_master_resp_i[0]` |
+| `intr_o` | `gr_heep_peripheral_vec_int[0]` |
 
 ### 3. Generate, build, run
 
 ```bash
 make mcu-gen
 make verilator-build
-make app PROJECT=SHA3-384-baseline
+make app PROJECT=matmul_hw
 make verilator-run
 ```
 
-Repeat `make app` and `make verilator-run` with `SHA3-384-loosely` and `SHA3-384-tightly`.
-Each run checks the digest and prints the cycles.
+Expected: one line per element type, `HW int8  32x32: <N> cycles, checksum ..., 0 errors`,
+with the same checksum as `matmul_sw`.
 
 Stuck? Copy the solution and regenerate:
 
@@ -59,23 +75,24 @@ cp ../solutions/part2/gr_heep_peripherals.sv.tpl hw/gr-heep/
 
 ## Hands-on 4: on the FPGA (15-20')
 
-Same connections and terminals as in [Part 1](part1-config.md#hands-on-2-on-the-fpga-10-15). Bitstream: `pynq-z2_keccak_<bscane|epflp>.bit`.
+Same connections and terminals as in [Part 1](part1-config.md#hands-on-2-on-the-fpga-10-15).
+Bitstream: `pynq-z2_matmul_<bscane|epflp>.bit`.
 
 ```bash
-openFPGALoader -b pynq_z2 ../bitstreams/pynq-z2_keccak_bscane.bit
-make app PROJECT=SHA3-384-baseline TARGET=pynq-z2
+openFPGALoader -b pynq_z2 ../bitstreams/pynq-z2_matmul_bscane.bit
+make app PROJECT=matmul_hw TARGET=pynq-z2
 openocd -f hw/vendor/x-heep/tb/core-v-mini-mcu-pynq-z2-bscan.cfg   # or core-v-mini-mcu-esl-programmer.cfg
 make -C hw/vendor/x-heep gdb_connect                               # in another terminal
 ```
 
-Repeat with `SHA3-384-loosely` and `SHA3-384-tightly`, and fill the table:
+Repeat with `matmul_sw` and fill the table:
 
-| Application | Cycles (simulation) | Cycles (FPGA) |
-|-------------|---------------------|---------------|
-| SHA3-384-baseline | | |
-| SHA3-384-loosely | | |
-| SHA3-384-tightly | | |
+| Elements | `matmul_sw` (simulation) | `matmul_hw` (simulation) | `matmul_sw` (FPGA) | `matmul_hw` (FPGA) |
+|----------|--------------------------|--------------------------|--------------------|--------------------|
+| int8 | | | | |
+| int16 | | | | |
+| int32 | | | | |
 
 Questions:
-- Where does the loosely coupled version spend its time? (hint: moving data over the bus)
-- What does the tightly coupled version save, and what does it cost in terms of integration?
+- Why does the element type change the accelerator time so much, and the CPU time so little?
+- How many cycles per MAC does the accelerator need with int8? Where does it spend the rest?

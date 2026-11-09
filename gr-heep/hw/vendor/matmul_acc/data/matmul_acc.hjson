@@ -1,0 +1,49 @@
+// Copyright 2026 Politecnico di Torino.
+// Solderpad Hardware License, Version 2.1, see LICENSE.md for details.
+// SPDX-License-Identifier: Apache-2.0 WITH SHL-2.1
+{ name: "matmul_acc"
+  clock_primary: "clk_i"
+  bus_interfaces: [
+    { protocol: "reg_iface", direction: "device" }
+  ]
+  regwidth: "32"
+  registers: [
+    { name: "CTRL", desc: "Control", swaccess: "wo", hwaccess: "hro", hwqe: "true",
+      fields: [
+        { bits: "0", name: "START", desc: "Write 1 to start C = A x B" }
+      ]
+    }
+    { name: "STATUS", desc: "Status", swaccess: "ro", hwaccess: "hwo",
+      fields: [
+        { bits: "0", name: "BUSY", desc: "The accelerator is computing" }
+      ]
+    }
+    { name: "DONE", desc: "End of computation, also drives the interrupt", swaccess: "rw1c", hwaccess: "hrw",
+      fields: [
+        { bits: "0", name: "DONE", desc: "Set by hardware at the end, write 1 to clear" }
+      ]
+    }
+    { name: "IRQ_EN", desc: "Interrupt enable", swaccess: "rw", hwaccess: "hro",
+      fields: [
+        { bits: "0", name: "IRQ_EN", desc: "Raise the interrupt while DONE is set" }
+      ]
+    }
+    { name: "A_ADDR", desc: "Address of A (N x N, row-major, word aligned)", swaccess: "rw", hwaccess: "hro",
+      fields: [ { bits: "31:0", name: "A_ADDR", desc: "Address of A" } ]
+    }
+    { name: "B_ADDR", desc: "Address of B transposed (N x N, row-major, word aligned)", swaccess: "rw", hwaccess: "hro",
+      fields: [ { bits: "31:0", name: "B_ADDR", desc: "Address of B transposed" } ]
+    }
+    { name: "C_ADDR", desc: "Address of C (N x N int32, row-major)", swaccess: "rw", hwaccess: "hro",
+      fields: [ { bits: "31:0", name: "C_ADDR", desc: "Address of C" } ]
+    }
+    { name: "SIZE", desc: "Matrix size N, multiple of 4, at most 128", swaccess: "rw", hwaccess: "hro",
+      fields: [ { bits: "7:0", name: "SIZE", desc: "N" } ]
+    }
+    { name: "MODE", desc: "Element type of A and B (packed SIMD)", swaccess: "rw", hwaccess: "hro",
+      fields: [
+        { bits: "1:0", name: "MODE", desc: "0: int8 (4 MACs per word), 1: int16 (2), 2: int32 (1)" }
+      ]
+    }
+  ]
+}

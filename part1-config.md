@@ -32,7 +32,7 @@ All commands run from `x-heep/`, with `conda activate x-heep`.
 
    Expected: `program finished with 0 errors and <N> cycles`. Write down `<N>`.
 
-Stuck? Use `../configs/B.py`, which is the solution.
+Stuck? Use the solution: `make mcu-gen X_HEEP_CFG=../solutions/part1/B.py`.
 
 ## Hands-on 2: on the FPGA (10-15')
 
@@ -81,7 +81,8 @@ For each configuration: program its bitstream, run `mcu-gen` with its config, th
 ```bash
 make app PROJECT=example_matmul TARGET=pynq-z2                 # A and B
 make app PROJECT=example_matmul TARGET=pynq-z2 \
-    ARCH=rv32imc_zicsr_zifencei_xcvhwlp_xcvmem_xcvmac_xcvbi_xcvalu_xcvsimd_xcvbitmanip   # C
+    ARCH=rv32imc_zicsr_zifencei_xcvhwlp_xcvmem_xcvmac_xcvbi_xcvalu_xcvsimd_xcvbitmanip \
+    COMPILER_FLAGS="-D__COREV_OPT_ASM -DMATMUL8"                  # C: XPULP SIMD kernel
 ```
 
 | Config | Cycles (simulation) | Cycles (FPGA) |

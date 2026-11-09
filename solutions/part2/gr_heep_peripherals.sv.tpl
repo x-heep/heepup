@@ -180,13 +180,15 @@ module gr_heep_peripherals
 
     // Instantiate here the external peripherals
     % for a_slave in gr_heep["peripherals"]:
-      % if (a_slave['name'] == "Keccak"):
-        keccak_top keccak_top_i (
+      % if (a_slave['name'] == "Matmul"):
+        matmul_acc matmul_acc_i (
             .clk_i,
             .rst_ni,
-            .reg_req_i(gr_heep_peripheral_req[gr_heep_pkg::KeccakPeriphIdx]),
-            .reg_rsp_o(gr_heep_peripheral_rsp[gr_heep_pkg::KeccakPeriphIdx]),
-            .keccak_intr_o(gr_heep_peripheral_vec_int[0])
+            .reg_req_i(gr_heep_peripheral_req[gr_heep_pkg::MatmulPeriphIdx]),
+            .reg_rsp_o(gr_heep_peripheral_rsp[gr_heep_pkg::MatmulPeriphIdx]),
+            .obi_req_o(gr_heep_master_req_o[0]),
+            .obi_rsp_i(gr_heep_master_resp_i[0]),
+            .intr_o(gr_heep_peripheral_vec_int[0])
         );
       % endif
         // % if (a_slave['name'] == "TestIp"):
@@ -205,17 +207,6 @@ module gr_heep_peripherals
   % endif
 
   % if (cpu.name == "cv32e40px" and xif):
-    keccak_tightly_wrapper keccak_tightly_wrapper_i (
-        .clk_i,
-        .rst_ni,
-        .xif_compressed_if,
-        .xif_issue_if,
-        .xif_commit_if,
-        .xif_mem_if,
-        .xif_mem_result_if,
-        .xif_result_if
-    );
-
     // Example coprocessor CV-X-IF v0.2 compliant.
     // xif_copro #(
     //     .INPUT_BUFFER_DEPTH(1),

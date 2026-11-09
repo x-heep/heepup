@@ -1,0 +1,13 @@
+// Copyright 2026 Politecnico di Torino.
+// Solderpad Hardware License, Version 2.1, see LICENSE.md for details.
+// SPDX-License-Identifier: Apache-2.0 WITH SHL-2.1
+
+{
+  name: "matmul_acc",
+  target_dir: "matmul_acc",
+
+  upstream: {
+    url: "https://github.com/edge-group-polito/matmul-acc.git",
+    rev: "main",
+  },
+}

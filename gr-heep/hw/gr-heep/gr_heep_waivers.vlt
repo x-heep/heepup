@@ -59,7 +59,3 @@ lint_off -rule NOLATCH -file "*clock_gate.sv" -match "*"
 lint_off -rule UNUSEDSIGNAL -file "*w25q128jw_controller.sv" -match "Signal is not used: 'cache_lookup_addr'"
 lint_off -rule UNUSEDSIGNAL -file "*w25q128jw_controller.sv" -match "Signal is not used: 'memio_be'"
 
-// Keccak loosely coupled accelerator (vendored)
-lint_off -file "*/hw/vendor/keccak/*"
-// keccak_tightly ships its own identical copy of the CV32E40PX XIF package
-lint_off -rule MODDUP -file "*cv32e40px_core_v_xif_pkg.sv"

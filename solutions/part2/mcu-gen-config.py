@@ -52,17 +52,17 @@ def config():
     # Set cv32e40px CPU
     system.set_cpu(CPU("cv32e40px"))
 
-    system.set_xif(
-        CvXIf(
-            x_num_rs=3,
-            x_id_width=4,
-            x_mem_width=32,
-            x_rfr_width=32,
-            x_rfw_width=32,
-            x_misa=0x0,
-            x_ecs_xs=0x0,
-        )
-    )
+    # system.set_xif(
+    #     CvXIf(
+    #         x_num_rs=2,
+    #         x_id_width=4,
+    #         x_mem_width=32,
+    #         x_rfr_width=32,
+    #         x_rfw_width=32,
+    #         x_misa=0x0,
+    #         x_ecs_xs=0x0,
+    #     )
+    # )
 
     # Memory subsystem
     # - 2 x 32kiB firmware and data
@@ -218,7 +218,7 @@ def config():
 
 def gr_heep_config():
 
-    ext_xbar_nmasters = 0
+    ext_xbar_nmasters = 1
 
     # External slaves memory map
     ext_xbar_slaves = {
@@ -234,7 +234,7 @@ def gr_heep_config():
 
     # External peripherals
     ext_periph = {
-        "keccak": {
+        "matmul": {
             "offset": 0x00000000,
             "length": 0x00001000,
         },
