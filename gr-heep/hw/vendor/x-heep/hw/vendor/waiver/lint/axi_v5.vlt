@@ -1,0 +1,15 @@
+// Copyright 2026 EPFL
+// Solderpad Hardware License, Version 2.1, see LICENSE.md for details.
+// SPDX-License-Identifier: Apache-2.0 WITH SHL-2.1
+
+`verilator_config
+
+lint_off -rule WIDTHTRUNC -file "*/pulp_platform/axi/*.sv" -match "*"
+lint_off -rule UNUSEDSIGNAL -file "*/pulp_platform/axi/src/*.sv" -match "*"
+
+// axi_demux_simple.sv's 'AxiIdWidth' parameter goes unused down whichever
+// generate branch this design's ID width selects -- a generic template
+// parameter, not specific to how this repo instantiates the demux. First
+// pulled into a Verilator build by the HLS dot-product accelerator example
+// via axi_obi's axi_to_obi/obi_to_axi.
+lint_off -rule UNUSEDPARAM -file "*/pulp_platform/axi/src/axi_demux_simple.sv" -match "Parameter is not used: 'AxiIdWidth'"

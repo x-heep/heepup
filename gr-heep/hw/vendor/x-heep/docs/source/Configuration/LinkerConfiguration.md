@@ -1,0 +1,264 @@
+# Linker Configuration
+
+The linker configuration defines how the RAM banks created by the memory configuration are exposed to software.
+Each linker section reserves a RAM address range and tells the generated linker script which input ELF sections
+should be placed there.
+
+The following rules always apply:
+
+- Linker section names must be unique.
+- After sorting by start address, the first two sections must be `code` and `data`.
+- Sections must not overlap.
+- A section must cover valid RAM addresses only. It cannot cross a hole between banks.
+
+`code` and `data` are special sections. They do not only contain the `.text` and `.data` input sections: the
+generated linker scripts also place the related runtime sections there.
+
+## Creating linker sections
+
+Linker sections can be created in two ways:
+
+1. Automatically from a RAM bank group, by giving the group a section name.
+2. Manually through `LinkerSection` objects.
+
+Both mechanisms can be mixed in the same configuration.
+
+### Automatically created sections
+
+A linker section that exactly matches a RAM bank group can be created directly from the memory configuration.
+This works for both continuous and interleaved bank groups.
+
+For continuous banks, pass the section name as the second argument of `add_ram_banks()`:
+
+```{code} python
+memory_ss.add_ram_banks([32] * 2, "code_and_data")
+```
+
+For interleaved banks, create the group and then add a section spanning it with
+`add_linker_section_for_banks()`:
+
+```{code} python
+memory_ss.add_ram_banks_il(4, 16, "data_interleaved")
+memory_ss.add_linker_section_for_banks(
+    "data_interleaved", interleaved=True, il_group_name="data_interleaved"
+)
+```
+
+This automatic section produces a custom linker output section named `.data_interleaved`.
+You can place objects there from C or C++ with:
+
+```{code} c
+int32_t buffer[16 * 16] __attribute__((section(".data_interleaved")));
+```
+
+### Manually created sections
+
+Manual sections are created with `LinkerSection`. Each section must have:
+
+- `name`: linker section name.
+- `start`: start address.
+
+You can then choose one of the following:
+
+- `size`: section size, using `LinkerSection.by_size()`.
+- `end`: end address, using `LinkerSection()`.
+- neither `size` nor `end`: the end is inferred automatically.
+
+If the end is not specified, X-HEEP infers it from the start of the next linker section. If there is no following
+section, the end is inferred from the end of the last RAM bank.
+
+Example:
+
+```{code} python
+memory_ss.add_linker_section(LinkerSection.by_size("code", 0x00000000, 0x0000E800))
+memory_ss.add_linker_section(LinkerSection("data", 0x0000E800, None))
+memory_ss.add_linker_section(LinkerSection("scratchpad", 0x00018000, 0x0001C000))
+```
+
+This creates a custom linker output section named `.scratchpad`:
+
+```{code} c
+uint8_t scratch[1024] __attribute__((section(".scratchpad")));
+```
+
+```{note}
+A custom linker section named `foo` collects the input ELF section `.foo`.
+If you want a linker section to collect a different input section name such as `.xheep_foo`, or several input
+section names at once, use `LinkerSubsection` as described below.
+```
+
+## Python configuration file
+
+The Python API gives full control over linker sections through `LinkerSection`.
+
+```{code} python
+from memory_ss.linker_section import LinkerSection
+from memory_ss.linker_subsection import LinkerSubsection
+```
+
+Without extra arguments, a `LinkerSection("foo", ...)` collects the input section `.foo`.
+
+There are are two functions to add linker sections:
+
+```{code} python
+memory_ss.add_linker_section(LinkerSection("data", 0x0000E800, None))
+memory_ss.add_linker_section(LinkerSection.by_size("code", 0x00000000, 0x0000E800))
+```
+
+The linker section fed to this function can be generated in two ways:
+- `LinkerSection()`: needs `name`, `start` and optionally `end` addresses
+- `LinkerSection.by_size()`: needs `name`, `start` and `size`
+
+Background checks make sure that there isn't any overlap between sections.
+
+### Grouping multiple input sections inside one linker section
+
+This feature has been specifically developed for interleaved memory regions, with the goal of assigning multiple linker sections to the same interleaved bank.
+However, it's possible to apply it to any ram bank.
+
+To implement this, we use `add_linker_section_for_banks()`, which allows the creation of a linker section that spans an entire bank. 
+
+Furthermore, it's possible to define a set of sub-sections (linker input sections) and to specify if we want to target an interleaved bank or not.
+
+Since in `xheep_gen` interleaved banks are treated as _groups of banks_, if we want to target a specific group we need to provide their name.
+
+For example, this will produce an interleaved group of 4 32kB banks, named *il_banks_group_0*:
+
+```{code} Python
+memory_ss.add_ram_banks_il(4, 32, "il_banks_group_0")
+```
+
+`add_linker_section_for_banks()` takes as inputs:
+- `name`: name of the section
+- `list[LinkerSubsections]`: optional list of subsection 
+- `interleaved`: to target groups of interleaved banks
+- `il_group_name`: name of the target group of interleaved banks
+
+Without any subsections, to generate the previous *il_banks_group_0* we can use:
+
+```{code} Python
+memory_ss.add_linker_section_for_banks("data_interleaved", interleaved=True, il_group_name="il_banks_group_0")
+```
+
+And this will generate:
+
+```{code} c
+.data_interleaved :
+{
+  . = ALIGN(4);
+  *(.data_interleaved)
+  . = ALIGN(4);
+} >ram2
+```
+
+If needed, it's possible to have multiple *sub-sections*, defined by the `LinkerSubsection` class. 
+
+It has four important fields:
+
+- `name`: logical name of the group.
+- `subsections_names`: list of input ELF section names to collect, without the leading `.`.
+- `provide_start`: when `True`, the linker script exports `__<name>_start`.
+- `provide_end`: when `True`, the linker script exports `__<name>_end`.
+
+The groups are emitted in the order in which they are listed.
+
+### Example: interleaved coprocessor section
+
+In this example, we need to have 2 sub-sections in an interleaved memory region, one for our coprocessor code, the other for its data.
+
+```{code} python
+from memory_ss.memory_ss import MemorySS
+from memory_ss.linker_section import LinkerSection
+from memory_ss.linker_subsection import LinkerSubsection
+
+memory_ss = MemorySS()
+
+memory_ss.add_ram_banks([32] * 2)
+memory_ss.add_ram_banks_il(4, 32, "il_banks_group_0")
+
+memory_ss.add_linker_section(LinkerSection.by_size("code", 0x00000000, 0x0000E800))
+memory_ss.add_linker_section(LinkerSection("data", 0x0000E800, None))
+
+coprocessor_subsection = LinkerSubsection(
+    name="coprocessor",
+    subsections_names=["coprocessor_code", "coprocessor_data"],
+    provide_start=True,
+    provide_end=True,
+)
+
+memory_ss.add_linker_section_for_banks(
+    "data_interleaved",
+    subsections=[coprocessor_subsection],
+    interleaved=True,
+    il_group_name="il_banks_group_0"
+)
+```
+
+In software, you can then place objects into the two input sections:
+
+```{code} c
+uint32_t coprocessor_program[] __attribute__((section(".coprocessor_code")));
+uint32_t coprocessor_buffer[256] __attribute__((section(".coprocessor_data")));
+
+extern uint8_t __coprocessor_start[];
+extern uint8_t __coprocessor_end[];
+```
+
+The generated linker section will look like this:
+
+```{code} text
+  .data_interleaved :
+  {
+    . = ALIGN(4);
+    PROVIDE(__coprocessor_start = .);
+    *(.coprocessor_code)
+    *(.coprocessor_data)
+    PROVIDE(__coprocessor_end = .);
+    . = ALIGN(4);
+  } >ram2
+```
+
+```{note}
+`LinkerSubsection` allows grouping several input ELF sections inside a single linker section, as shown above.
+```
+
+## Linker script configuration
+
+The linker script configuration is used to configure the heap and stack sizes for runtime code execution. These settings only affect how the linker organizes the `data` section, and do not modify the hardware configuration.
+
+### Python linker script configuration
+
+In a Python configuration file, create a `LinkerScript` instance and attach it to the `XHeep` object:
+
+```{code} python
+from linker_script.linker_script import LinkerScript
+
+system.set_linker_script_config(LinkerScript(stack_size=0x800, heap_size=0x800))
+```
+
+Both fields are sizes in bytes. Each value must be a strictly positive integer.
+
+If one of the fields is omitted, X-HEEP infers it from the size of the `data` linker region:
+
+```{code} python
+system.set_linker_script_config(LinkerScript(stack_size=0x800))
+```
+
+In this example, `heap_size` is inferred as half of the remaining `data` region after reserving the configured
+stack size. If both `stack_size` and `heap_size` are omitted, X-HEEP reserves one quarter of the `data` region for
+the stack and one quarter for the heap, leaving the remaining half available for static data and BSS. Inferred
+sizes are aligned down to 16 bytes.
+
+Either argument can be omitted to let X-HEEP infer the missing value:
+
+```{code} python
+system.set_linker_script_config(LinkerScript(stack_size=0x800))
+```
+
+The `LinkerScript` object is built after the memory subsystem is built, because the inference and validation use
+the final size of the `data` linker region. A Python configuration must set a linker script configuration before
+generation, even if the stack and heap sizes are left for inference:
+
+```{code} python
+system.set_linker_script_config(LinkerScript())
+```

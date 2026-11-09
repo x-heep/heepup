@@ -1,0 +1,17 @@
+`verilator_config
+
+// keccak_tightly.sv
+lint_off -rule UNUSEDSIGNAL   -file "*hw/rtl/keccak_tightly.sv" -lines 17
+lint_off -rule CASEINCOMPLETE -file "*hw/rtl/keccak_tightly.sv" -lines 62
+
+// id_stage.sv
+lint_off -rule UNUSEDSIGNAL -file "*hw/rtl/id_stage.sv" -lines 41
+lint_off -rule COMBDLY      -file "*hw/rtl/id_stage.sv" -lines 72-73
+lint_off -rule COMBDLY      -file "*hw/rtl/id_stage.sv" -lines 91-92
+lint_off -rule COMBDLY      -file "*hw/rtl/id_stage.sv" -lines 120-121
+lint_off -rule SYNCASYNCNET -file "*hw/rtl/id_stage.sv" -lines 40
+
+// commit_stage.sv
+lint_off -rule UNUSEDSIGNAL -file "*hw/rtl/commit_stage.sv" -lines 24-25
+lint_off -rule BLKSEQ       -file "*hw/rtl/commit_stage.sv" -lines 40
+lint_off -rule SYNCASYNCNET -file "*hw/rtl/commit_stage.sv" -lines 40

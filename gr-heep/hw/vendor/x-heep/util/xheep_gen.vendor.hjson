@@ -1,0 +1,19 @@
+// Copyright 2020 ETH Zurich and University of Bologna.
+// Licensed under the Apache License, Version 2.0, see LICENSE for details.
+// SPDX-License-Identifier: Apache-2.0
+{
+  name: "xheep_gen",
+  target_dir: "xheep_gen",
+
+  upstream: {
+    url: "https://github.com/x-heep/xheep_gen.git",
+    rev: "8cf7b1094ae0d459d7fe41dba8a8eeb678d2a66c",
+  },
+
+  exclude_from_upstream: [
+    ".gitignore"
+    ".github"
+    "Makefile"
+    "README.md"
+  ],
+}

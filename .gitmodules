@@ -1,0 +1,3 @@
+[submodule "x-heep"]
+	path = x-heep
+	url = https://github.com/x-heep/x-heep.git

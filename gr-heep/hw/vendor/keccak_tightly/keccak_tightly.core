@@ -1,0 +1,33 @@
+CAPI=2:
+
+# Copyright 2022 PoliTO
+# Solderpad Hardware License, Version 2.1, see LICENSE.md for details.
+# SPDX-License-Identifier: Apache-2.0 WITH SHL-2.1
+
+name: edge:ip:keccak_tightly
+description: Keccak-tightly ip
+
+filesets: 
+
+  rtl:
+    files:
+    - hw/rtl/include/keccak_tightly_pkg.sv
+    - hw/rtl/include/cv32e40px_core_v_xif_pkg.sv
+    - hw/rtl/id_stage.sv
+    - hw/rtl/commit_stage.sv
+    - hw/rtl/rol32.v
+    - hw/rtl/keccak_tightly.sv
+    - hw/rtl/keccak_tightly_top.sv
+    - hw/rtl/keccak_tightly_wrapper.sv
+    file_type: systemVerilogSource
+
+  waivers:
+    files:
+    - waivers.vlt
+    file_type: vlt
+
+targets:
+  default: &default_target
+    filesets:
+    - rtl
+    - waivers

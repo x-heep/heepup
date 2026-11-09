@@ -1,0 +1,19 @@
+// Copyright 2020 ETH Zurich and University of Bologna.
+// Licensed under the Apache License, Version 2.0, see LICENSE for details.
+// SPDX-License-Identifier: Apache-2.0
+{
+  name: "spi",
+  target_dir: "spi",
+
+  upstream: {
+    url: "https://github.com/x-heep/xheep_spi.git",
+    rev: "35c6e5f8b91803b8a76b470f252c0105dae3c69f",
+  },
+
+  exclude_from_upstream: [
+    "util",
+    "vendor/xheep-common",
+    "vendor/pulp_platform_register_interface",
+    "vendor/pulp_platform_register_interface.core",
+  ],
+}

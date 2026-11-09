@@ -1,0 +1,55 @@
+{
+  name: "keccak",
+  clock_primary: "clk_i",
+  reset_primary: "rst_ni",
+    bus_interfaces: [
+    { protocol: "reg_iface", direction: "device" }],
+  regwidth: "32",
+  registers: [
+    {
+      multireg: {
+        name: "DATA",
+        desc: "Shared buffer for input/output of Keccak module",
+        count: "50",
+        cname: "data",
+        swaccess: "rw",         // SW can write input and later read result
+        hwaccess: "hrw",        // HW can read inputs and later write results
+        //hwqe: true,
+        //hwext: true,
+        fields: [
+          { bits: "31:0" }
+        ]
+      }
+    },
+    {
+      name: "CTRL",
+      desc: "Trigger the Keccak",
+      swaccess: "wo",
+      hwaccess: "hro",
+      //hwqe: true,
+      //hwext: true,
+      fields: [
+        {
+          bits: "0",
+          name: "START",
+          desc: "Make the keccak start"
+        }
+      ]
+    },
+    {
+      name: "STATUS",
+      desc: "Contains status information about the Keccak",
+      swaccess: "ro",
+      hwaccess: "hwo",
+      //hwqe: true,
+      //hwext: true,
+      fields: [
+        {
+          bits: "0",
+          name: "STATUS",
+          desc: "If set, output of Keccak is valid"
+        }
+      ]
+    }
+  ]
+}

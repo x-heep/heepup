@@ -1,0 +1,36 @@
+# System Configuration
+
+The X-HEEP system can be configured by two methods:
+- Directly passing arguments to the make command.
+- Using a Python script (recommended)
+
+If a `Python` script is used for configuration, the following parameters can be overridden from the make command:
+
+- `CPU`
+- `BUS`
+- `MEMORY_BANKS`
+- `MEMORY_BANKS_IL`
+
+## Make Command
+
+The easiest way of changing the default values is with some arguments in the make command. For example, you can change the CPU type (cv32e20), the default bus type (onetoM), the default continuous memory size (2 banks), or the default interleaved memory size (0 banks) with:
+
+```bash
+make mcu-gen CPU=cv32e40p BUS=NtoM MEMORY_BANKS=12 MEMORY_BANKS_IL=4
+```
+
+This generates X-HEEP with the cv32e40p core, a parallel bus, and 16 memory banks (12 continuous and 4 interleaved), 32KB each, for a total memory of 512KB.
+
+This method has certain limitations, such as the size of the memory banks, which are fixed at 32KB. For compatibility reasons `MEMORY_BANKS` does not create linker sections while `MEMORY_BANKS_IL` does create a linker section. You can find more details in the documented code of the Makefile and in the specific configuration sections of this chapter.
+
+## Python Configuration (recommended)
+
+A more complex configuration can be done using a Python script. The default configurations and examples are located in the `configs` directory.
+
+The Python script should include a `config()` function that takes no parameters and returns a {py:class}`xheep.XHeep` instance. An example is shown in [configs/general.py](https://github.com/x-heep/x-heep/blob/main/configs/general.py).
+
+To run `mcu-gen` with a specific Python configuration script, use the following command:
+
+```{code} bash
+make mcu-gen X_HEEP_CFG=configs/general.py
+```
