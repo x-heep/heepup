@@ -88,7 +88,7 @@ Every line must be `OK`. The FPGA tools may be `WARN` only if you cannot install
 
 ```bash
 cd x-heep
-make mcu-gen X_HEEP_CFG=../configs/A.py   # generate X-HEEP with configuration A
+make mcu-gen                              # generate X-HEEP with the default configuration
 make verilator-build                      # build the simulation model (a few minutes)
 make app PROJECT=hello_world              # compile the application
 make verilator-run                        # run it

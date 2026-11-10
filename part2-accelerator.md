@@ -15,18 +15,10 @@ The accelerator is already vendored in `hw/vendor/matmul_acc` (see its `README.m
 | `matmul_sw` | C = A x B (32x32) on the CPU with int8, int16 and int32 elements, prints the cycles |
 | `matmul_hw` | the same on the accelerator, prints the cycles and checks the results |
 
+You integrate the accelerator, then run it on the FPGA with the bitstream we give you.
 All commands run from `gr-heep/`, with `conda activate x-heep`.
 
-## Hands-on 3: integration and simulation (15-20')
-
-### 0. Baseline
-
-Before touching anything, measure the software version on the model you built at home in Part 0:
-
-```bash
-make app PROJECT=matmul_sw
-make verilator-run
-```
+## Hands-on 2: integration (15-20')
 
 ### 1. Configuration: `config/mcu-gen-config.py`, function `gr_heep_config()`
 
@@ -54,44 +46,81 @@ In the loop over `gr_heep["peripherals"]` there is a commented example (`TestIp`
 | `obi_req_o`, `obi_rsp_i` | `gr_heep_master_req_o[0]` / `gr_heep_master_resp_i[0]` |
 | `intr_o` | `gr_heep_peripheral_vec_int[0]` |
 
-### 3. Generate, build, run
+### 3. Generate and check
 
 ```bash
 make mcu-gen
-make verilator-build
-make app PROJECT=matmul_hw
-make verilator-run
+make app PROJECT=matmul_hw TARGET=pynq-z2
 ```
 
-Expected: one line per element type, `HW int8  32x32: <N> cycles, checksum ..., 0 errors`,
-with the same checksum as `matmul_sw`.
+If the accelerator is missing from the configuration, `make app` fails with `MATMUL_PERIPH_START_ADDRESS` undeclared.
+Then compare your files with the solution:
 
-Stuck? Copy the solution and regenerate:
+```bash
+diff -w config/mcu-gen-config.py ../solutions/part2/mcu-gen-config.py
+diff -w hw/gr-heep/gr_heep_peripherals.sv.tpl ../solutions/part2/gr_heep_peripherals.sv.tpl
+```
+
+The bitstream is built from the solution. If your files differ, or you are stuck, copy the solution and regenerate:
 
 ```bash
 cp ../solutions/part2/mcu-gen-config.py config/
 cp ../solutions/part2/gr_heep_peripherals.sv.tpl hw/gr-heep/
+make mcu-gen
 ```
 
-## Hands-on 4: on the FPGA (15-20')
+## Hands-on 3: on the FPGA (15-20')
 
-Same connections and terminals as in [Part 1](part1-config.md#hands-on-2-on-the-fpga-10-15).
-Bitstream: `pynq-z2_matmul_<bscane|epflp>.bit`.
+### Connections
+
+Your bench has one of two setups. Use the bitstream that matches it.
+
+| Setup | JTAG (debug) | UART | Bitstream | OpenOCD config |
+|-------|--------------|------|-----------|----------------|
+| PYNQ-Z2 only | PYNQ micro-USB | USB-UART adapter on PMOD JB: adapter RX to pin 1, adapter TX to pin 7, GND to pin 5 | `pynq-z2_matmul_bscane.bit` | `core-v-mini-mcu-pynq-z2-bscan.cfg` |
+| EPFL programmer | programmer on PMOD JA/JB | programmer | `pynq-z2_matmul_epflp.bit` | `core-v-mini-mcu-esl-programmer.cfg` |
+
+In both setups the PYNQ micro-USB powers and programs the board.
+
+### Run the applications
+
+Use three terminals.
+
+Terminal 1, UART (find the port with `ls /dev/ttyUSB*` on Linux, `ls /dev/tty.usbserial*` on macOS):
+
+```bash
+picocom -b 9600 --imap lfcrlf <uart-port>
+```
+
+Terminal 2, program the FPGA, build the software and start OpenOCD:
 
 ```bash
 openFPGALoader -b pynq_z2 ../bitstreams/pynq-z2_matmul_bscane.bit
-make app PROJECT=matmul_hw TARGET=pynq-z2
-openocd -f hw/vendor/x-heep/tb/core-v-mini-mcu-pynq-z2-bscan.cfg   # or core-v-mini-mcu-esl-programmer.cfg
-make -C hw/vendor/x-heep gdb_connect                               # in another terminal
+make app PROJECT=matmul_sw TARGET=pynq-z2
+openocd -f hw/vendor/x-heep/tb/core-v-mini-mcu-pynq-z2-bscan.cfg
 ```
 
-Repeat with `matmul_sw` and fill the table:
+Terminal 3, load and run the application:
 
-| Elements | `matmul_sw` (simulation) | `matmul_hw` (simulation) | `matmul_sw` (FPGA) | `matmul_hw` (FPGA) |
-|----------|--------------------------|--------------------------|--------------------|--------------------|
-| int8 | | | | |
-| int16 | | | | |
-| int32 | | | | |
+```bash
+make -C hw/vendor/x-heep gdb_connect
+```
+
+The cycles appear on the UART. Leave GDB with `quit`. OpenOCD keeps running: in terminal 3, run `matmul_hw`:
+
+```bash
+make app PROJECT=matmul_hw TARGET=pynq-z2
+make -C hw/vendor/x-heep gdb_connect
+```
+
+Expected for `matmul_hw`: one line per element type, `HW int8  32x32: <N> cycles, checksum ..., 0 errors`,
+with the same checksum as `matmul_sw`.
+
+| Elements | `matmul_sw` | `matmul_hw` |
+|----------|-------------|-------------|
+| int8 | | |
+| int16 | | |
+| int32 | | |
 
 Questions:
 - Why does the element type change the accelerator time so much, and the CPU time so little?
