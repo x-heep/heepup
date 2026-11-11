@@ -127,6 +127,13 @@ verilator-run-app:
 verilator-run:
 	$(FUSESOC) --cores-root . run --no-export --target=sim --tool=verilator $(FUSESOC_FLAGS) \
 		--run x-heep:systems:gr-heep $(FUSESOC_PARAM) \
+		--run_options="+firmware=../../../sw/build/main.hex $(SIM_ARGS) +trace=true"
+
+# Same as `verilator-run` without waveform dump (faster)
+.PHONY: verilator-opt
+verilator-opt:
+	$(FUSESOC) --cores-root . run --no-export --target=sim --tool=verilator $(FUSESOC_FLAGS) \
+		--run x-heep:systems:gr-heep $(FUSESOC_PARAM) \
 		--run_options="+firmware=../../../sw/build/main.hex $(SIM_ARGS)"
 
 ## @section Questasim

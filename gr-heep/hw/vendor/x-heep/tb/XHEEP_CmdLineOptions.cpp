@@ -109,3 +109,19 @@ unsigned int XHEEP_CmdLineOptions::get_boot_sel()
 
   return boot_sel;
 }
+
+bool XHEEP_CmdLineOptions::get_enable_trace()
+{
+  std::string arg_trace = this->getCmdOption(this->argc, this->argv, "+trace=");;
+
+  bool enable_trace = false;
+
+  if(arg_trace.empty()){
+    std::cout<<"[TESTBENCH]: Waveform tracing disabled"<<std::endl;
+  } else {
+    std::cout<<"[TESTBENCH]: Waveform tracing enabled"<<std::endl;
+    enable_trace = true;
+  }
+
+  return enable_trace;
+}

@@ -270,11 +270,21 @@ verilator-run-app: app
 ## the C++ Verilator model previously built (`verilator-build` target).
 verilator-run:
 	$(FUSESOC) --cores-root $(FUSESOC_CORES_ROOT) run --no-export --target=sim --tool=verilator $(FUSESOC_FLAGS) --run openhwgroup.org:systems:core-v-mini-mcu $(FUSESOC_PARAM) \
+		--run_options="+firmware=../../../sw/build/main.hex $(SIM_ARGS) +trace=true"
+
+## Same as `verilator-run` without waveform tracing (faster)
+verilator-opt:
+	$(FUSESOC) --cores-root $(FUSESOC_CORES_ROOT) run --no-export --target=sim --tool=verilator $(FUSESOC_FLAGS) --run openhwgroup.org:systems:core-v-mini-mcu $(FUSESOC_PARAM) \
 		--run_options="+firmware=../../../sw/build/main.hex $(SIM_ARGS)"
 
 ## Launches the RTL simulation with the compiled firmware (`app` target) using
 ## the SystemC Verilator model previously built (`verilator-build-sc` target).
 verilator-run-sc:
+	$(FUSESOC) --cores-root $(FUSESOC_CORES_ROOT) run --no-export --target=sim_sc --tool=verilator $(FUSESOC_FLAGS) --run openhwgroup.org:systems:core-v-mini-mcu $(FUSESOC_PARAM) \
+		--run_options="+firmware=../../../sw/build/main.hex $(SIM_ARGS) +trace=true"
+
+## Same as `verilator-sc-run` without waveform tracing (faster)
+verilator-opt-sc:
 	$(FUSESOC) --cores-root $(FUSESOC_CORES_ROOT) run --no-export --target=sim_sc --tool=verilator $(FUSESOC_FLAGS) --run openhwgroup.org:systems:core-v-mini-mcu $(FUSESOC_PARAM) \
 		--run_options="+firmware=../../../sw/build/main.hex $(SIM_ARGS)"
 
