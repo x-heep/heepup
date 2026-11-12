@@ -190,7 +190,7 @@ The CPU that we instantiated in the last step supports DSP-like SIMD instruction
 To make use of those features, we need to change the compiler settings to enable the ISA extensions. Let's recompile the application with those extensions and rerun the simulation:
 
 ```bash
-make app PROJECT=matmul_sw \
+make app PROJECT=matmul \
     ARCH=rv32imc_zicsr_zifencei_xcvhwlp_xcvmem_xcvmac_xcvbi_xcvalu_xcvsimd_xcvbitmanip
 ```
 
