@@ -1,22 +1,48 @@
 # Part 1: configure X-HEEP
 
-X-HEEP is generated from a Python configuration (`mcu-gen`): CPU, bus, memory, peripherals and interrupts.
+X-HEEP is generated from a Python configuration, that is processed by the `mcu-gen` utility: CPU, bus, memory, peripherals and interrupts.
 In this part you generate X-HEEP with the configurations provided by EPFL and compare them in simulation.
 
 All commands run from `x-heep/`, with `conda activate x-heep`.
 
 ## Hands-on 1: configurations in simulation (10-15')
 
-To see the cycles in simulation, first set `PRINTF_IN_SIM` to `1` in `sw/applications/example_matmul/main.c`.
+In this section of the tutorial you will experiment with different configuration of X-HEEP to see how its different parameters affect the performance of an application.
 
-For each configuration:
+### 1.1 Base configuration
 
-```bash
-make mcu-gen X_HEEP_CFG=<config>.py   # check the summary it prints: CPU, bus, memory banks
-make verilator-build
-make app PROJECT=example_matmul
-make verilator-run
-```
+system.set_bus_type(BusType.onetoM)
+system.set_cpu(cv32e20())
+memory_ss.add_ram_banks([32] * 1)
+
+make app PROJECT=gr_heep_hello_world
+
+### 1.2 More memory
+system.set_bus_type(BusType.onetoM)
+system.set_cpu(cv32e20())
+memory_ss.add_ram_banks([32] * 2)
+
+make app PROJECT=matmul
+
+### 1.3 Better CPU and parallel bus architecture
+system.set_bus_type(BusType.NtoM)
+system.set_cpu(cv32e40p())
+memory_ss.add_ram_banks([32] * 2)
+
+make app PROJECT=matmul
+
+### 1.4 Software optimization: SIMD instructions
+system.set_bus_type(BusType.NtoM)
+system.set_cpu(cv32e40p(
+        corev_pulp=True,
+    ))
+memory_ss.add_ram_banks([32] * 2)
+
+make app PROJECT=matmul_sw \
+    ARCH=rv32imc_zicsr_zifencei_xcvhwlp_xcvmem_xcvmac_xcvbi_xcvalu_xcvsimd_xcvbitmanip
+
+
+#####################
 
 Expected: `program finished with 0 errors and <N> cycles`. Write down `<N>`.
 

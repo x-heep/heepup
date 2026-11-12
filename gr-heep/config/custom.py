@@ -10,6 +10,8 @@ from xheep import XHeep
 from address_map.address_map import AddressMap
 from address_map.address_region import AddressRegion
 from cpu.cpu import CPU
+from cpu.cv32e40p import cv32e40p
+from cpu.cv32e20 import cv32e20
 from cv_x_if import CvXIf
 from bus_type import BusType
 from debug_ss.debug_ss import DebugSS
@@ -50,25 +52,13 @@ def config():
     system.set_bus_type(BusType.onetoM)
 
     # CPU CONFIGURATION
-    system.set_cpu(CPU("cv32e20"))
-
-    # system.set_xif(
-    #     CvXIf(
-    #         x_num_rs=2,
-    #         x_id_width=4,
-    #         x_mem_width=32,
-    #         x_rfr_width=32,
-    #         x_rfw_width=32,
-    #         x_misa=0x0,
-    #         x_ecs_xs=0x0,
-    #     )
-    # )
+    system.set_cpu(cv32e20())
 
     # MEMORY CONFIGURATION
-    # - 1 x 32kiB firmware and data
     memory_ss = MemorySS()
     memory_ss.add_ram_banks([32] * 1)
-    # Linker script sections
+
+    # LINKER SCRIPT CONFIGURATION
     memory_ss.add_linker_section(LinkerSection.by_size("code", 0, 0x0004000))
     memory_ss.add_linker_section(LinkerSection("data", 0x00004000, None))
     system.set_memory_ss(memory_ss)
@@ -76,10 +66,10 @@ def config():
     # Stack and heap sizes
     system.set_linker_script_config(LinkerScript(stack_size=0x800, heap_size=0x800))
 
-    # Debug subsystem
+    # DEBUG SUBSYSTEM
     system.set_debug_ss(DebugSS(has_spi_slave=1))
 
-    # System address map
+    # ADDRESS MAP
     address_map = AddressMap()
     address_map.add_region(
         AddressRegion("debug", start_address=0x10000000, length=0x00100000)
@@ -105,7 +95,7 @@ def config():
     )
     system.set_address_map(address_map)
 
-    # Peripheral domains initialization
+    # PERIPHERAL DOMAINS
     base_peripheral_domain = PeripheralDomain(name="base_peripheral_domain")
     user_peripheral_domain = PeripheralDomain(name="user_peripheral_domain")
 
@@ -144,7 +134,7 @@ def config():
     system.add_peripheral_domain(base_peripheral_domain)
     system.add_peripheral_domain(user_peripheral_domain)
 
-    # Interrupts
+    # INTERRUPTS
     interrupts = Interrupts()
     interrupts.add_interrupt("null_intr", 0)
     interrupts.add_interrupt("uart_intr_tx_watermark", 1)
@@ -200,7 +190,7 @@ def config():
     interrupts.add_interrupt("w25q128jw_controller_intr_event", 51)
     system.set_interrupts(interrupts)
 
-    # Add GR-HEEP extension
+    # GR-HEEP EXTENSION
     system.add_extension("gr-heep", gr_heep_config())
 
     return system

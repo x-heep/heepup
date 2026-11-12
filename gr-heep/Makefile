@@ -59,6 +59,11 @@ EXTERNAL_MCU_GEN_TEMPLATES = $(addprefix $(HEEP_REL_PATH)/,$(GR_HEEP_GEN_TPLS))
 # Optional TEST_FLAGS options are '--compile-only'
 TEST_FLAGS=
 
+# Simulation options
+# SIM_ARGS: Additional simulation arguments for run-app-verilator based on input parameters:
+# - MAX_SIM_TIME: Maximum simulation time in clock cycles (unlimited if not provided)
+SIM_ARGS += $(if $(MAX_SIM_TIME),+max_sim_time=$(MAX_SIM_TIME))
+
 # Software
 PROJECT := hello_world
 
@@ -119,7 +124,7 @@ verilator-run-app:
 	$(MAKE) app
 	$(FUSESOC) --cores-root . run --no-export --target=sim --tool=verilator $(FUSESOC_FLAGS) \
 		--run x-heep:systems:gr-heep $(FUSESOC_PARAM) \
-		--run_options="+firmware=../../../sw/build/main.hex $(SIM_ARGS)"
+		--run_options="+firmware=../../../sw/build/main.hex $(SIM_ARGS) +trace=true"
 
 ## Launches the RTL simulation with the compiled firmware (`app` target) using
 ## the C++ Verilator model previously built (`verilator-build` target).
