@@ -47,8 +47,10 @@ from peripherals.peripheral_domain import PeripheralDomain
 
 
 def config():
-    # BUS CONFIGURATION
+    # MCU DESCRIPTION INITIALIZATION
     system = XHeep()
+
+    # BUS CONFIGURATION
     system.set_bus_type(BusType.onetoM)
 
     # CPU CONFIGURATION
