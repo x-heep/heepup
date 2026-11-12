@@ -66,8 +66,8 @@ def config():
     # )
 
     # Memory subsystem
-    # - 2 x 32kiB firmware and data
-    # - 2 x 16kiB interleaved banks
+    # - 6 x 32kiB firmware and data
+    # - 4 x 16kiB interleaved banks
     memory_ss = MemorySS()
     memory_ss.add_ram_banks([32] * 6)
     memory_ss.add_ram_banks_il(4, 16, "data_interleaved")
