@@ -10,6 +10,7 @@ from xheep import XHeep
 from address_map.address_map import AddressMap
 from address_map.address_region import AddressRegion
 from cpu.cpu import CPU
+from cpu.cv32e40p import cv32e40p
 from cv_x_if import CvXIf
 from bus_type import BusType
 from debug_ss.debug_ss import DebugSS
@@ -50,7 +51,7 @@ def config():
     system.set_bus_type(BusType.NtoM)
 
     # Set cv32e40px CPU
-    system.set_cpu(CPU("cv32e40px"))
+    system.set_cpu(cv32e40p(corev_pulp=True))
 
     # system.set_xif(
     #     CvXIf(
@@ -65,8 +66,8 @@ def config():
     # )
 
     # Memory subsystem
-    # - 2 x 32kiB firmware and data
-    # - 2 x 16kiB interleaved banks
+    # - 6 x 32kiB firmware and data
+    # - 4 x 16kiB interleaved banks
     memory_ss = MemorySS()
     memory_ss.add_ram_banks([32] * 6)
     memory_ss.add_ram_banks_il(4, 16, "data_interleaved")
